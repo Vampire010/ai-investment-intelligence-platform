@@ -1,0 +1,35 @@
+name: Deployment Check
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Web smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+
+      - name: Start web app
+        env:
+          HOST: 127.0.0.1
+          PORT: 8765
+        run: |
+          python -m market_agent.web &
+          sleep 3
+          curl --fail http://127.0.0.1:8765/api/health
+          curl --fail http://127.0.0.1:8765/
+          curl --fail http://127.0.0.1:8765/robots.txt
+          curl --fail http://127.0.0.1:8765/sitemap.xml

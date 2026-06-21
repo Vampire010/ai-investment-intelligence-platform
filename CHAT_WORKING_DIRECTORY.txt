@@ -1,0 +1,5 @@
+Chat Working Directory:
+C:\Users\giris\OneDrive\Documents\AI Investment Intelligence Platform
+
+PowerShell:
+cd "C:\Users\giris\OneDrive\Documents\AI Investment Intelligence Platform"

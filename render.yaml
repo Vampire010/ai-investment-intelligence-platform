@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-investment-intelligence-platform
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: CORS_ALLOW_ORIGIN
+        value: "*"

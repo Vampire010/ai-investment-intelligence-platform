@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Investment Intelligence Platform</title>
+  <link rel="stylesheet" href="/static/styles.css?v=20260621_1900">
+</head>
+<body>
+  <main class="shell">
+    <aside class="recent-menu" id="recentMenu">
+      <button id="recentToggleBtn" class="recent-toggle" type="button" aria-expanded="false" aria-controls="recentDrawer">Recent</button>
+      <div class="recent-drawer" id="recentDrawer">
+        <div class="recent-head">
+        <h2>Recent Prompts</h2>
+        <button id="clearRecentBtn" type="button">Clear</button>
+        </div>
+        <div id="recentPrompts" class="recent-list" aria-label="Recently searched prompts"></div>
+      </div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar">
+        <div>
+            <p class="eyebrow">Realtime research Analysis</p>
+          <h1>AI Investment Intelligence Platform</h1>
+        </div>
+        <div class="status" id="status">Ready</div>
+      </header>
+
+      <section class="prompt-panel">
+        <label for="prompt">Investment prompt</label>
+        <textarea id="prompt" spellcheck="false">I want 3X profit in 5 years. Suggest investment strategy.</textarea>
+        <div class="actions">
+          <button id="analyzeBtn" type="button">Analyze</button>
+          <button id="cancelBtn" type="button" disabled>Cancel</button>
+          <button id="clearBtn" type="button">Clear</button>          
+        </div>
+        <div class="examples" aria-label="Example prompts">
+          <button type="button" data-prompt="what will be gold price on 22 June 2026">Gold forecast</button>
+          <button type="button" data-prompt="suggest me top 20 stocks to buy on 22 June 2026">Top stocks</button>
+          <button type="button" data-prompt="[Macro & Geopolitics] Assess impact of Middle East conflict on Indian markets.">Macro risk</button>
+          <button type="button" data-prompt="what are the treaty signed between India and US">Treaty impact</button>
+        </div>
+      </section>
+
+      <section class="summary-grid" id="summaryGrid">
+        <article>
+          <span>Signal</span>
+          <strong id="signal">-</strong>
+        </article>
+        <article>
+          <span>Direction</span>
+          <strong id="direction">-</strong>
+        </article>
+        <article>
+          <span>Risk</span>
+          <strong id="risk">-</strong>
+        </article>
+        <article>
+          <span>Range</span>
+          <strong id="range">-</strong>
+        </article>
+      </section>
+
+      <section class="probabilities">
+        <div>
+          <div class="row-label"><span>Buy</span><strong id="buyText">0%</strong></div>
+          <div class="bar"><div id="buyBar" class="fill buy"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Hold</span><strong id="holdText">0%</strong></div>
+          <div class="bar"><div id="holdBar" class="fill hold"></div></div>
+        </div>
+        <div>
+          <div class="row-label"><span>Sell</span><strong id="sellText">0%</strong></div>
+          <div class="bar"><div id="sellBar" class="fill sell"></div></div>
+        </div>
+      </section>
+    </section>
+
+    <aside class="report-pane">
+      <div class="report-head">
+        <h2>Live Analysis Result</h2>
+        <div class="report-actions">
+          <span class="app-version">v20260621_1900</span>
+          <span id="reportState">No result yet</span>
+        </div>
+      </div>
+      <section id="resultPanel" class="result-panel" aria-live="polite"></section>
+    </aside>
+  </main>
+  <script src="/static/app.js?v=20260621_1900"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Virtual environments and secrets
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# Node/tooling
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# IDE and OS files
+.vs/
+.vscode/
+.idea/
+*.code-workspace
+.DS_Store
+Thumbs.db
+
+# Generated runtime artifacts
+outputs/
+*.log
+
+# Local large prompt/security exports
+*_Prompts.jsonl
+prompt_training_sample_*.jsonl
+listed_securities_*.xlsx

@@ -1,12 +1,13 @@
 [project]
-name = "make-me-rich-agent"
+name = "ai-investment-intelligence-platform"
 version = "0.1.0"
-description = "AI/ML intelligent gold and Indian stock market analysis agent prototype."
+description = "AI Investment Intelligence Platform for market research, risk analysis, and predictive investment intelligence."
 requires-python = ">=3.10"
 dependencies = []
 
 [project.scripts]
 market-agent = "market_agent.cli:main"
+market-agent-web = "market_agent.web:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

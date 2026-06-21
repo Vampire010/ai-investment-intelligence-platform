@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: Python tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install --upgrade pip && python -m pip install -e .
+
+      - name: Run tests
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m unittest discover -s tests
+
+      - name: Validate web assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: JavaScript syntax check
+        run: node --check src/market_agent/web_static/app.js

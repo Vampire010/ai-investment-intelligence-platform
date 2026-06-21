@@ -51,6 +51,10 @@ class GoldMarketSnapshot:
     central_bank_buying_tonnes: float
     physical_consumption_index: float
     price_change_30d_pct: float
+    volatility_pct: float = 0.0
+    avg_daily_move_pct: float = 0.0
+    best_daily_move_pct: float = 0.0
+    worst_daily_move_pct: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -67,6 +71,9 @@ class StockMarketSnapshot:
     volatility_pct: float
     earnings_surprise_pct: float
     promoter_or_corporate_event_score: float
+    avg_daily_move_pct: float = 0.0
+    best_daily_move_pct: float = 0.0
+    worst_daily_move_pct: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -76,6 +83,7 @@ class NewsArticle:
     body: str
     published_at: datetime
     entities: tuple[str, ...] = field(default_factory=tuple)
+    url: str = ""
 
 
 @dataclass(frozen=True)
@@ -86,6 +94,11 @@ class NewsAnalysis:
     topics: tuple[str, ...]
     entities: tuple[str, ...]
     anomaly_flags: tuple[str, ...]
+    keyword_hits: tuple[str, ...] = field(default_factory=tuple)
+    keyword_categories: tuple[str, ...] = field(default_factory=tuple)
+    seo_sentiment_score: float = 0.0
+    article_count: int = 0
+    source_count: int = 0
 
 
 @dataclass(frozen=True)
@@ -94,6 +107,9 @@ class Prediction:
     direction: Direction
     signal: Signal
     confidence_score: int
+    buy_probability: int
+    hold_probability: int
+    sell_probability: int
     predicted_low: float
     predicted_high: float
     risk_score: int
