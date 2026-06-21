@@ -151,6 +151,11 @@ class OneStockFailureFixtureDataSource(RealtimeFixtureDataSource):
         return super().get_stock_snapshot(symbol)
 
 
+class StockQuoteOutageFixtureDataSource(RealtimeFixtureDataSource):
+    def get_stock_snapshot(self, symbol: str) -> StockMarketSnapshot:
+        raise DataSourceError("Fixture stock quote outage")
+
+
 class MarketAnalysisAgentTest(unittest.TestCase):
     def test_agent_returns_gold_and_stock_predictions(self) -> None:
         result = MarketAnalysisAgent(data_source=RealtimeFixtureDataSource()).analyze("RELIANCE")
@@ -172,6 +177,15 @@ class MarketAnalysisAgentTest(unittest.TestCase):
             any("Live market data:" in reason for reason in result["gold_prediction"]["reasons"])
         )
         self.assertTrue(result["news_evidence_by_instrument"]["gold"])
+
+    def test_gold_only_analysis_does_not_require_stock_quote(self) -> None:
+        result = MarketAnalysisAgent(data_source=StockQuoteOutageFixtureDataSource()).analyze_gold()
+        query = parse_market_query("whats the gold price on 22 july 2026")
+        text = _format_text(result, query)
+
+        self.assertIn("gold_prediction", result)
+        self.assertNotIn("stock_prediction", result)
+        self.assertIn("Gold Prediction:", text)
 
     def test_unknown_stock_uses_generic_snapshot(self) -> None:
         result = MarketAnalysisAgent(data_source=RealtimeFixtureDataSource()).analyze("ABC")
@@ -679,7 +693,7 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertIn("/static/app.js?v=", html)
         self.assertIn("/static/styles.css?v=", html)
-        self.assertIn("v20260621_1900", html)
+        self.assertIn("v20260621_1915", html)
         self.assertIn("Live Analysis Result", html)
         self.assertIn("Recent Prompts", html)
         self.assertIn("recentToggleBtn", html)
@@ -812,6 +826,20 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertEqual(len(result["top_buy_stocks"]), 20)
         self.assertIn("TATAMOTORS", result["user_query"]["skipped_symbols"])
+
+    def test_top_stocks_returns_news_ranked_candidates_when_quotes_are_unavailable(self) -> None:
+        query = parse_market_query("suggest me top 5 stocks to buy on 22 June 2026")
+        result = _analyze_top_stocks(
+            MarketAnalysisAgent(data_source=StockQuoteOutageFixtureDataSource()),
+            query,
+            "realtime",
+        )
+        text = _format_top_stocks_text(result)
+
+        self.assertEqual(len(result["top_buy_stocks"]), 5)
+        self.assertTrue(result["top_buy_stocks"][0]["prediction"]["metadata"]["quote_unavailable"])
+        self.assertIn("Realtime quote unavailable in deployment", text)
+        self.assertNotIn("Realtime Data Availability Report", text)
 
     def test_top_stocks_does_not_label_weak_hold_as_buy(self) -> None:
         result = {

@@ -31,7 +31,7 @@ from market_agent.services.agent import MarketAnalysisAgent
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "web_static"
-APP_VERSION = "20260621_1900"
+APP_VERSION = "20260621_1915"
 
 
 def run(host: str = "127.0.0.1", port: int = 8765) -> None:
@@ -109,7 +109,7 @@ def analyze_prompt(
             _attach_prompt_training(result, prompt_training)
             text = _format_category_prompt_text(result)
         else:
-            result = agent.analyze(query.stock_symbol or "RELIANCE")
+            result = agent.analyze_gold() if query.instrument_type == "gold" else agent.analyze(query.stock_symbol or "RELIANCE")
             result["user_query"] = {
                 "text": query.raw_text,
                 "instrument_type": query.instrument_type,

@@ -395,13 +395,13 @@ def _attach_prompt_training(result: dict[str, Any], prompt_training: dict[str, A
 
 def _format_text(result: dict[str, Any], query: MarketQuery | None = None) -> str:
     gold = result["gold_prediction"]
-    stock = result["stock_prediction"]
     if query is None or query.instrument_type == "gold":
         prediction = gold
         title = "Gold Prediction"
     elif query.instrument_type == "portfolio":
         return _portfolio_text(result, query)
     else:
+        stock = result["stock_prediction"]
         prediction = stock
         title = "Stock Prediction"
 
@@ -471,7 +471,9 @@ def _analyze_top_stocks(agent: MarketAnalysisAgent, query: MarketQuery, data_sou
             except Exception:
                 skipped.append(symbol)
     if not candidates:
-        raise DataSourceError("Unable to fetch enough realtime stock data for the top-stock scan")
+        candidates = _news_ranked_stock_candidates(query, agent.data_source)
+        if not candidates:
+            raise DataSourceError("Unable to fetch enough realtime stock data for the top-stock scan")
     ranked = sorted(
         candidates,
         key=lambda item: (
@@ -501,7 +503,68 @@ def _analyze_top_stocks(agent: MarketAnalysisAgent, query: MarketQuery, data_sou
             "skipped_symbols": tuple(skipped),
         },
         "top_buy_stocks": selected,
-    }
+}
+
+
+def _news_ranked_stock_candidates(query: MarketQuery, data_source: Any) -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
+    for index, symbol in enumerate(TOP_STOCK_WATCHLIST[: max(query.top_n * 2, 20)]):
+        try:
+            articles = data_source.get_news((symbol,))
+        except Exception:
+            articles = []
+        analysis = NewsIntelligenceEngine().analyze(articles)
+        buy_probability = max(15, min(62, 36 + int(analysis.sentiment_score * 25) + min(14, len(articles) // 3)))
+        sell_probability = max(3, min(35, 12 - int(analysis.sentiment_score * 12) + len(analysis.anomaly_flags) * 3))
+        hold_probability = max(0, 100 - buy_probability - sell_probability)
+        risk_score = max(45, min(88, 62 + len(analysis.anomaly_flags) * 5 - int(analysis.sentiment_score * 10)))
+        confidence = max(35, min(72, 45 + min(20, len(articles) // 2) + int(abs(analysis.sentiment_score) * 10)))
+        direction = "Upward" if buy_probability >= 50 else "Downward" if sell_probability >= 30 else "Sideways"
+        signal = "Buy" if buy_probability >= 50 and buy_probability > sell_probability else "Hold"
+        reasons = [
+            "Realtime quote endpoint was unavailable in this deployment run; candidate is ranked by realtime news/source coverage.",
+            f"Fetched {len(articles)} realtime news/source items for {symbol}.",
+            f"News sentiment is {analysis.sentiment.value} with {int(analysis.impact_score * 100)}% impact score.",
+        ]
+        if analysis.topics:
+            reasons.append(f"Detected topics: {', '.join(analysis.topics[:4])}.")
+        if analysis.keyword_hits:
+            reasons.append(f"SEO keyword themes: {', '.join(analysis.keyword_hits[:4])}.")
+        prediction = {
+            "instrument": f"{symbol} ({symbol})",
+            "direction": direction,
+            "signal": signal,
+            "buy_probability": buy_probability,
+            "hold_probability": hold_probability,
+            "sell_probability": sell_probability,
+            "confidence_score": confidence,
+            "predicted_range": "Realtime quote unavailable; ranked by live news/source signals",
+            "risk_score": risk_score,
+            "reasons": reasons,
+            "metadata": {
+                "unit": "INR",
+                "quote_unavailable": True,
+                "source_count": analysis.source_count,
+                "article_count": len(articles),
+            },
+        }
+        candidates.append(
+            {
+                "rank_score": round(buy_probability * 1.2 + confidence * 0.5 - risk_score * 0.35, 2),
+                "prediction": prediction,
+                "research_sources": sorted({article.source for article in articles}),
+                "research_source_links": _source_links_from_articles(articles),
+            }
+        )
+    return sorted(candidates, key=lambda item: item["rank_score"], reverse=True)
+
+
+def _source_links_from_articles(articles: list[Any]) -> list[dict[str, str]]:
+    links: dict[str, str] = {}
+    for article in articles[:12]:
+        if article.url and article.source not in links:
+            links[article.source] = article.url
+    return [{"source": source, "url": url} for source, url in sorted(links.items())]
 
 
 def _fill_ranked_candidates(
@@ -547,7 +610,22 @@ def _format_top_stocks_text(result: dict[str, Any]) -> str:
             if prediction["signal"] == "Buy" or prediction["buy_probability"] >= 50
             else prediction["signal"]
         )
-        entry_low, entry_high, target_price, stop_loss, upside_pct = _stock_trade_levels(prediction)
+        quote_unavailable = prediction.get("metadata", {}).get("quote_unavailable")
+        if quote_unavailable:
+            trade_lines = [
+                "Entry Zone: Realtime quote unavailable in deployment",
+                "Target Price: Re-run when quote endpoint is reachable",
+                "Stop Loss: Use broker/live exchange quote before any trade",
+                "Estimated Upside: Not calculated without live quote",
+            ]
+        else:
+            entry_low, entry_high, target_price, stop_loss, upside_pct = _stock_trade_levels(prediction)
+            trade_lines = [
+                f"Entry Zone: {entry_low} - {entry_high} {prediction['metadata']['unit']}",
+                f"Target Price: {target_price} {prediction['metadata']['unit']}",
+                f"Stop Loss: {stop_loss} {prediction['metadata']['unit']}",
+                f"Estimated Upside: {upside_pct}%",
+            ]
         lines.extend(
             [
                 "",
@@ -557,10 +635,7 @@ def _format_top_stocks_text(result: dict[str, Any]) -> str:
                 f"Hold Probability: {prediction['hold_probability']}%",
                 f"Sell Probability: {prediction['sell_probability']}%",
                 f"Confidence Score to {display_signal}: {prediction['confidence_score']}%",
-                f"Entry Zone: {entry_low} - {entry_high} {prediction['metadata']['unit']}",
-                f"Target Price: {target_price} {prediction['metadata']['unit']}",
-                f"Stop Loss: {stop_loss} {prediction['metadata']['unit']}",
-                f"Estimated Upside: {upside_pct}%",
+                *trade_lines,
                 f"Risk Score: {prediction['risk_score']}%",
                 "Why This Stock:",
                 *[f"- {reason}" for reason in prediction["reasons"][:4]],

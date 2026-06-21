@@ -27,6 +27,44 @@ class MarketAnalysisAgent:
         self.gold_predictor = GoldPredictor()
         self.stock_predictor = StockPredictor()
 
+    def analyze_gold(self) -> dict[str, Any]:
+        indicators = self.data_source.get_economic_indicators()
+        gold = self.data_source.get_gold_snapshot()
+        news_articles = self.data_source.get_news(("Gold",))
+        gold_articles = [article for article in news_articles if "Gold" in article.entities]
+        gold_news = self.news_engine.analyze(gold_articles)
+        gold_prediction = self.gold_predictor.predict(indicators, gold, gold_news)
+        gold_prediction_data = self._prediction_to_dict(gold_prediction)
+        gold_prediction_data["reasons"] = self._merge_reasons(
+            gold_prediction_data["reasons"],
+            self._gold_realtime_reasons(indicators, gold, gold_news, gold_articles),
+        )
+        self._add_institutional_metadata(
+            gold_prediction_data,
+            gold_news,
+            gold_articles,
+            "Gold",
+        )
+        return {
+            "economic_indicators": asdict(indicators),
+            "gold_prediction": gold_prediction_data,
+            "research_sources": sorted({article.source for article in news_articles}),
+            "research_source_links": self._source_links(news_articles),
+            "research_sources_by_instrument": {
+                "gold": sorted({article.source for article in gold_articles}),
+            },
+            "research_source_links_by_instrument": {
+                "gold": self._source_links(gold_articles),
+            },
+            "news_evidence_by_instrument": {
+                "gold": self._news_evidence(gold_articles),
+            },
+            "alerts": self._alerts(gold_prediction),
+            "alerts_by_instrument": {
+                "gold": self._alerts(gold_prediction),
+            },
+        }
+
     def analyze(self, stock_symbol: str = "RELIANCE") -> dict[str, Any]:
         indicators = self.data_source.get_economic_indicators()
         gold = self.data_source.get_gold_snapshot()

@@ -142,8 +142,14 @@ class RealtimeIndiaMarketDataSource:
         self.timeout_seconds = timeout_seconds
 
     def get_economic_indicators(self) -> EconomicIndicators:
-        usd_inr = self._quote_history("INR=X", "1mo")
-        crude = self._quote_history("CL=F", "1mo")
+        try:
+            usd_inr = self._quote_history("INR=X", "1mo")
+        except DataSourceError:
+            usd_inr = _QuoteHistory(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, "USD/INR unavailable")
+        try:
+            crude = self._quote_history("CL=F", "1mo")
+        except DataSourceError:
+            crude = _QuoteHistory(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, "Crude unavailable")
         return EconomicIndicators(
             cpi_inflation=0.0,
             wpi_inflation=0.0,
@@ -162,8 +168,16 @@ class RealtimeIndiaMarketDataSource:
 
     def get_gold_snapshot(self) -> GoldMarketSnapshot:
         indicators = self.get_economic_indicators()
-        gold = self._quote_history("GC=F", "1mo")
-        domestic_price = gold.latest_close * indicators.inr_usd / 3.11035
+        try:
+            gold = self._quote_history("GC=F", "1mo")
+            if indicators.inr_usd:
+                domestic_price = gold.latest_close * indicators.inr_usd / 3.11035
+            else:
+                domestic_price = self._groww_gold_rates()["rates"]["24K"]["price"]
+        except DataSourceError:
+            groww = self._groww_gold_rates()
+            domestic_price = groww["rates"]["24K"]["price"]
+            gold = _QuoteHistory(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, "Groww Gold Rates")
         return GoldMarketSnapshot(
             domestic_price_per_10g=round(domestic_price, 2),
             international_price_usd_oz=gold.latest_close,
