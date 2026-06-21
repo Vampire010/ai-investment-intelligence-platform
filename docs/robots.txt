@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://vampire010.github.io/ai-investment-intelligence-platform/sitemap.xml
