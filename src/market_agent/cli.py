@@ -595,11 +595,13 @@ def _fill_ranked_candidates(
 
 def _format_top_stocks_text(result: dict[str, Any]) -> str:
     query = result["user_query"]
+    raw_text = str(query.get("text") or "").lower()
+    list_title = "Top Intraday Movers:" if "movers" in raw_text or "intraday" in raw_text else "Top Buy Stocks:"
     lines = [
         f"Question: {query['text']}",
         "Data Source: Realtime market/news feeds",
         "",
-        "Top Buy Stocks:",
+        list_title,
     ]
     training_lines = _prompt_training_lines(query.get("prompt_training"))
     if training_lines:
@@ -609,7 +611,7 @@ def _format_top_stocks_text(result: dict[str, Any]) -> str:
             "",
             *training_lines,
             "",
-            "Top Buy Stocks:",
+            list_title,
         ]
     for index, item in enumerate(result["top_buy_stocks"], start=1):
         prediction = item["prediction"]

@@ -268,6 +268,16 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertEqual(query.perspective, "top_stocks")
         self.assertIsNone(query.stock_symbol)
 
+    def test_market_query_parser_handles_top_nse_intraday_movers_prompt(self) -> None:
+        query = parse_market_query(
+            "List top intraday movers on the NSE right now: ticker, % change, volume vs average, and a one-line reason for the move."
+        )
+
+        self.assertEqual(query.instrument_type, "stock")
+        self.assertEqual(query.perspective, "top_stocks")
+        self.assertIsNone(query.stock_symbol)
+        self.assertEqual(query.top_n, 5)
+
     def test_market_query_parser_handles_single_stock_intraday_prompt(self) -> None:
         query = parse_market_query("Give intraday trading plan for TCS today")
 
@@ -595,6 +605,42 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertIn("top_buy_stocks", result["analysis"])
         self.assertNotIn("Stock Symbol Required", result["text"])
 
+    def test_web_top_nse_intraday_movers_prompt_uses_ranked_candidates(self) -> None:
+        fake_result = {
+            "user_query": {
+                "text": "List top intraday movers on the NSE right now: ticker, % change, volume vs average, and a one-line reason for the move.",
+                "data_source": "realtime",
+            },
+            "top_buy_stocks": [
+                {
+                    "prediction": {
+                        "instrument": "State Bank of India (SBIN)",
+                        "direction": "Upward",
+                        "signal": "Buy",
+                        "buy_probability": 66,
+                        "hold_probability": 28,
+                        "sell_probability": 6,
+                        "confidence_score": 70,
+                        "predicted_low": 820,
+                        "predicted_high": 845,
+                        "risk_score": 48,
+                        "reasons": ["Intraday volume is above average"],
+                        "metadata": {"unit": "INR"},
+                    },
+                    "research_source_links": [{"source": "NSE India", "url": "https://www.nseindia.com/"}],
+                }
+            ],
+        }
+        prompt = "List top intraday movers on the NSE right now: ticker, % change, volume vs average, and a one-line reason for the move."
+        with patch.object(web_app, "_analyze_top_stocks", return_value=fake_result):
+            result = analyze_prompt(prompt, no_prompt_training=True)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["query"]["perspective"], "top_stocks")
+        self.assertIn("Top Intraday Movers:", result["text"])
+        self.assertIn("top_buy_stocks", result["analysis"])
+        self.assertNotIn("Stock Symbol Required", result["text"])
+
     def test_expert_broad_prompt_routing_does_not_require_stock_symbol(self) -> None:
         cases = {
             "Recommend the top 5 sectors in India for the next 6-12 months with rationale, top 3 stock picks per sector, and key catalysts to watch.": (
@@ -754,7 +800,7 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertIn("/static/app.js?v=", html)
         self.assertIn("/static/styles.css?v=", html)
-        self.assertIn("v20260621_1930", html)
+        self.assertIn("v20260622_1945", html)
         self.assertIn("Live Analysis Result", html)
         self.assertIn("Recent Prompts", html)
         self.assertIn("recentToggleBtn", html)

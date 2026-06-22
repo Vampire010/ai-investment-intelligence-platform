@@ -255,6 +255,9 @@ def _perspective(lower: str) -> str:
         or "risky" in lower and "stocks" in lower
         or "undervalued" in lower and "stocks" in lower
         or "intraday stocks" in lower
+        or "intraday movers" in lower
+        or "top intraday movers" in lower
+        or "nse" in lower and "movers" in lower and "volume" in lower
         or "breakout" in lower and "stocks" in lower
         or "overbought" in lower and "stocks" in lower
         or "oversold" in lower and "stocks" in lower
