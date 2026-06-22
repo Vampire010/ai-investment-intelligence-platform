@@ -571,7 +571,11 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertIn("Autonomous Agent Reports", workflow)
         self.assertIn('cron: "30 0,4,7,12,16 * * *"', workflow)
         self.assertIn("python -m market_agent.agents --run-once", workflow)
-        self.assertIn("actions/upload-artifact@v4", workflow)
+        self.assertIn("girishrathode.rathode@gmail.com", workflow)
+        self.assertIn("python -m market_agent.agents.delivery", workflow)
+        self.assertIn("outputs/autonomous_agents/*.pdf", workflow)
+        self.assertIn("SMTP_HOST", workflow)
+        self.assertNotIn("actions/upload-artifact@v4", workflow)
 
     def test_autonomous_agent_run_cycle_generates_institutional_report(self) -> None:
         config = AutonomousCloudAgentConfig(watchlist=("RELIANCE", "TCS"), max_stocks=2)
@@ -615,11 +619,14 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
             json_path = Path(report["output_files"]["json"])
             markdown_path = Path(report["output_files"]["markdown"])
+            pdf_path = Path(report["output_files"]["pdf"])
             self.assertTrue(json_path.exists())
             self.assertTrue(markdown_path.exists())
+            self.assertTrue(pdf_path.exists())
             saved = json.loads(json_path.read_text(encoding="utf-8"))
             self.assertEqual(saved["platform"], "AI Investment Intelligence Platform")
             self.assertIn("Executive Summary", markdown_path.read_text(encoding="utf-8"))
+            self.assertTrue(pdf_path.read_bytes().startswith(b"%PDF-1.4"))
 
     def test_phase2_prompt_library_families_return_data_provider_reports(self) -> None:
         prompts = {

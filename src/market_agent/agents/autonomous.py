@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from market_agent.agents.delivery import markdown_to_pdf
 from market_agent.cli import TOP_STOCK_WATCHLIST
 from market_agent.data.realtime_sources import DataSourceError, RealtimeIndiaMarketDataSource
 from market_agent.intelligence.nlp import NewsIntelligenceEngine
@@ -120,9 +121,11 @@ class AutonomousMarketIntelligenceOrchestrator:
         stamp = datetime.fromisoformat(report["run_time_ist"]).strftime("%Y%m%d_%H%M%S")
         json_path = output_dir / f"{stamp}_autonomous_market_intelligence.json"
         md_path = output_dir / f"{stamp}_autonomous_market_intelligence.md"
+        pdf_path = output_dir / f"{stamp}_autonomous_market_intelligence.pdf"
         json_path.write_text(json.dumps(report, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
         md_path.write_text(self._markdown_report(report), encoding="utf-8")
-        return {"json": str(json_path), "markdown": str(md_path)}
+        markdown_to_pdf(md_path, pdf_path)
+        return {"json": str(json_path), "markdown": str(md_path), "pdf": str(pdf_path)}
 
     def _gold_report(self) -> dict[str, Any]:
         try:
@@ -572,6 +575,7 @@ def main() -> None:
             print("Autonomous agent cycle complete.")
             print(f"JSON: {report.get('output_files', {}).get('json')}")
             print(f"Markdown: {report.get('output_files', {}).get('markdown')}")
+            print(f"PDF: {report.get('output_files', {}).get('pdf')}")
 
 
 if __name__ == "__main__":

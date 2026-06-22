@@ -28,6 +28,10 @@ jobs:
     name: Generate autonomous market intelligence report
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
 
     steps:
       - name: Checkout
@@ -48,11 +52,23 @@ jobs:
           WATCHLIST: ${{ github.event.inputs.watchlist || '' }}
         run: |
           python -m market_agent.agents --run-once --max-stocks "$MAX_STOCKS" --watchlist "$WATCHLIST" --output-dir outputs/autonomous_agents --print-json
+          PDF_PATH="$(ls -1 outputs/autonomous_agents/*.pdf | tail -n 1)"
+          echo "PDF_PATH=$PDF_PATH" >> "$GITHUB_ENV"
 
-      - name: Upload generated reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: autonomous-market-intelligence-${{ github.run_id }}
-          path: outputs/autonomous_agents/
-          if-no-files-found: error
-          retention-days: 30
+      - name: Email PDF report
+        if: ${{ env.SMTP_HOST != '' && env.SMTP_USERNAME != '' && env.SMTP_PASSWORD != '' }}
+        env:
+          SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: girishrathode.rathode@gmail.com
+          REPORT_PDF: ${{ env.PDF_PATH }}
+        run: |
+          python -m market_agent.agents.delivery --markdown "$(ls -1 outputs/autonomous_agents/*.md | tail -n 1)" --pdf "$REPORT_PDF" --email --subject "AI Investment Intelligence Platform Report"
+
+      - name: Email setup notice
+        if: ${{ env.SMTP_HOST == '' || env.SMTP_USERNAME == '' || env.SMTP_PASSWORD == '' }}
+        run: |
+          echo "SMTP secrets are not configured. PDF email delivery cannot run."
+          echo "Required repository secrets: SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD."
+          echo "Optional repository secrets: SMTP_PORT, EMAIL_FROM."
+          exit 1
