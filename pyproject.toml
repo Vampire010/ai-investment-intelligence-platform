@@ -8,6 +8,7 @@ dependencies = []
 [project.scripts]
 market-agent = "market_agent.cli:main"
 market-agent-web = "market_agent.web:main"
+market-agent-autonomous = "market_agent.agents.autonomous:main"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

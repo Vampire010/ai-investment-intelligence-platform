@@ -12,6 +12,11 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from market_agent import MarketAnalysisAgent
+from market_agent.agents import (
+    AUTONOMOUS_AGENT_SCHEDULE_IST,
+    AutonomousCloudAgentConfig,
+    AutonomousMarketIntelligenceOrchestrator,
+)
 from market_agent.cli import (
     _analyze_top_stocks,
     _category_prompt_response,
@@ -154,6 +159,20 @@ class OneStockFailureFixtureDataSource(RealtimeFixtureDataSource):
 class StockQuoteOutageFixtureDataSource(RealtimeFixtureDataSource):
     def get_stock_snapshot(self, symbol: str) -> StockMarketSnapshot:
         raise DataSourceError("Fixture stock quote outage")
+
+
+class AutonomousFixtureDataSource(RealtimeFixtureDataSource):
+    def get_silver_price_on(self, requested_date: date | None = None) -> dict[str, object]:
+        return {
+            "instrument": "Silver",
+            "date": (requested_date or date(2026, 6, 22)).isoformat(),
+            "domestic_price": 232736.0,
+            "domestic_unit": "INR per kg",
+            "source": "Fixture Silver Rates",
+            "source_url": "https://example.test/silver",
+            "mode": "current",
+            "rates": {"1 Kg": {"price": 232736.0, "unit": "INR per kg"}},
+        }
 
 
 class MarketAnalysisAgentTest(unittest.TestCase):
@@ -529,6 +548,70 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertEqual(macro_query.perspective, "macro_geopolitics")
         self.assertEqual(stock_query.perspective, "equity_research")
         self.assertEqual(forex_query.perspective, "gold_intelligence")
+
+    def test_autonomous_agent_schedule_matches_master_prompt(self) -> None:
+        self.assertEqual(
+            AUTONOMOUS_AGENT_SCHEDULE_IST,
+            ("06:00", "10:00", "13:00", "18:00", "22:00"),
+        )
+        config = AutonomousCloudAgentConfig(watchlist=("RELIANCE",), max_stocks=1)
+        orchestrator = AutonomousMarketIntelligenceOrchestrator(
+            config=config,
+            data_source=AutonomousFixtureDataSource(),
+        )
+        next_run = orchestrator.next_run_time(
+            datetime(2026, 6, 22, 9, 30, tzinfo=timezone(timedelta(hours=5, minutes=30)))
+        )
+
+        self.assertEqual(next_run.strftime("%H:%M"), "10:00")
+
+    def test_autonomous_agent_run_cycle_generates_institutional_report(self) -> None:
+        config = AutonomousCloudAgentConfig(watchlist=("RELIANCE", "TCS"), max_stocks=2)
+        orchestrator = AutonomousMarketIntelligenceOrchestrator(
+            config=config,
+            data_source=AutonomousFixtureDataSource(),
+        )
+        report = orchestrator.run_cycle(
+            now=datetime(2026, 6, 22, 10, 0, tzinfo=timezone(timedelta(hours=5, minutes=30))),
+            save=False,
+        )
+
+        self.assertEqual(report["agent_network"], "Autonomous Cloud Market Intelligence Agents")
+        self.assertIn("gold_intelligence_report", report)
+        self.assertIn("silver_intelligence_report", report)
+        self.assertIn("indian_stock_market_summary", report)
+        self.assertIn("top_opportunities", report)
+        self.assertIn("top_risks", report)
+        self.assertIn("tomorrow_forecast", report)
+        self.assertIn("ai_recommendations", report)
+        self.assertEqual(len(report["stock_intelligence_reports"]), 2)
+        self.assertEqual(report["silver_intelligence_report"]["status"], "complete")
+        self.assertTrue(report["executive_summary"])
+        self.assertTrue(report["confidence_scores"])
+
+    def test_autonomous_agent_saves_json_and_markdown_reports(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = AutonomousCloudAgentConfig(
+                output_dir=Path(tmpdir),
+                watchlist=("RELIANCE",),
+                max_stocks=1,
+            )
+            orchestrator = AutonomousMarketIntelligenceOrchestrator(
+                config=config,
+                data_source=AutonomousFixtureDataSource(),
+            )
+            report = orchestrator.run_cycle(
+                now=datetime(2026, 6, 22, 6, 0, tzinfo=timezone(timedelta(hours=5, minutes=30))),
+                save=True,
+            )
+
+            json_path = Path(report["output_files"]["json"])
+            markdown_path = Path(report["output_files"]["markdown"])
+            self.assertTrue(json_path.exists())
+            self.assertTrue(markdown_path.exists())
+            saved = json.loads(json_path.read_text(encoding="utf-8"))
+            self.assertEqual(saved["platform"], "AI Investment Intelligence Platform")
+            self.assertIn("Executive Summary", markdown_path.read_text(encoding="utf-8"))
 
     def test_phase2_prompt_library_families_return_data_provider_reports(self) -> None:
         prompts = {
