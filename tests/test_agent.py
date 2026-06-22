@@ -565,6 +565,14 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertEqual(next_run.strftime("%H:%M"), "10:00")
 
+    def test_cloud_autonomous_agent_workflow_is_scheduled(self) -> None:
+        workflow = Path(".github/workflows/autonomous-agents.yml").read_text(encoding="utf-8")
+
+        self.assertIn("Autonomous Agent Reports", workflow)
+        self.assertIn('cron: "30 0,4,7,12,16 * * *"', workflow)
+        self.assertIn("python -m market_agent.agents --run-once", workflow)
+        self.assertIn("actions/upload-artifact@v4", workflow)
+
     def test_autonomous_agent_run_cycle_generates_institutional_report(self) -> None:
         config = AutonomousCloudAgentConfig(watchlist=("RELIANCE", "TCS"), max_stocks=2)
         orchestrator = AutonomousMarketIntelligenceOrchestrator(
