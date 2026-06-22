@@ -77,6 +77,7 @@ CATEGORY_PERSPECTIVES = {
     "market_summary",
     "sector_outlook",
     "precious_metals_technical",
+    "political_influence",
     "multibagger_goal",
     "equity_research",
     "gold_intelligence",
@@ -96,6 +97,10 @@ OFFICIAL_RESEARCH_LINKS = {
     "DPIIT Startup India": "https://dpiit.gov.in/",
     "MeitY Updates": "https://www.meity.gov.in/",
     "India Budget": "https://www.indiabudget.gov.in/",
+    "Election Commission of India": "https://www.eci.gov.in/",
+    "MCA Company Master Data": "https://www.mca.gov.in/content/mca/global/en/mca/master-data/MDS.html",
+    "OpenCorporates": "https://opencorporates.com/",
+    "Government eProcurement": "https://eprocure.gov.in/eprocure/app",
 }
 OFFICIAL_SOURCES_BY_PERSPECTIVE = {
     "mutual_funds": ("SEBI Updates", "AMFI Investor Information", "RBI Notifications", "PIB Government Releases"),
@@ -114,6 +119,16 @@ OFFICIAL_SOURCES_BY_PERSPECTIVE = {
     "market_summary": ("NSE Circulars", "BSE Notices", "RBI Press Releases", "SEBI Updates"),
     "sector_outlook": ("NSE Circulars", "BSE Notices", "SEBI Updates", "MeitY Updates", "DPIIT Startup India", "India Budget"),
     "precious_metals_technical": ("RBI Press Releases", "RBI Notifications", "PIB Government Releases", "India Budget"),
+    "political_influence": (
+        "Election Commission of India",
+        "SEBI Updates",
+        "NSE Circulars",
+        "BSE Notices",
+        "MCA Company Master Data",
+        "Government eProcurement",
+        "OpenCorporates",
+        "PIB Government Releases",
+    ),
     "multibagger_goal": ("SEBI Updates", "AMFI Investor Information", "NSE Circulars", "BSE Notices", "India Budget"),
     "equity_research": ("NSE Circulars", "BSE Notices", "SEBI Updates", "PIB Government Releases"),
     "gold_intelligence": ("RBI Press Releases", "RBI Notifications", "PIB Government Releases", "India Budget"),
@@ -795,6 +810,7 @@ def _category_news_entities(query: MarketQuery) -> tuple[str, ...]:
         "market_summary": ("stock", "nifty", "sensex"),
         "sector_outlook": ("stock", "technology", "banking", "pharma", "auto"),
         "precious_metals_technical": ("gold", "silver"),
+        "political_influence": ("political influence", "beneficial ownership", "government contract", "sebi", "listed company"),
         "portfolio_strategy": ("mutual fund", "stock", "gold", "investment"),
         "portfolio_advisor": ("mutual fund", "stock", "gold", "investment"),
         "equity_research": (query.stock_symbol or "stock",),
@@ -1012,6 +1028,7 @@ def _trusted_master_links_for_perspective(perspective: str) -> list[dict[str, st
         "market_summary": "stock_impact_score",
         "sector_outlook": "stock_impact_score",
         "precious_metals_technical": "gold_impact_score",
+        "political_influence": "crisis_impact_score",
         "multibagger_goal": "ai_weighting_score",
         "equity_research": "stock_impact_score",
         "gold_intelligence": "gold_impact_score",
@@ -1723,6 +1740,72 @@ def _precious_metals_technical_profile(query: MarketQuery) -> dict[str, Any]:
     }
 
 
+def _political_influence_profile(query: MarketQuery) -> dict[str, Any]:
+    return {
+        "type": "political_influence",
+        "title": "Political Influence Investment Intelligence",
+        "direction": "Governance / Event Risk",
+        "signal": "Hold",
+        "buy_probability": 24,
+        "hold_probability": 54,
+        "sell_probability": 22,
+        "confidence_score": 63,
+        "predicted_range": "Evidence-based risk ranking; not a price forecast until company-level ownership and market data are verified",
+        "risk_score": 76,
+        "analysis_sections": (
+            {
+                "title": "Political Relationship Analysis",
+                "rows": (
+                    {"metric": "Political Person / PEP", "value": "Identify current/former leaders, officials, donors, relatives, advisors, and close associates", "interpretation": "Treat each name as an allegation-sensitive entity that needs source-backed verification."},
+                    {"metric": "Relationship Type", "value": "Direct ownership, indirect ownership, board role, proxy, trust, family ownership, advisory role", "interpretation": "Direct filings carry higher confidence than media-only relationship claims."},
+                    {"metric": "Evidence Strength", "value": "Regulatory filing > exchange disclosure > annual report > court/procurement record > trusted media", "interpretation": "Investor action should depend on evidence quality, not rumor frequency."},
+                ),
+            },
+            {
+                "title": "Investment And Shareholding Analysis",
+                "rows": (
+                    {"metric": "Company Table", "value": "Company | Stock Symbol | Political Person | Party | Relationship Type | Ownership % | Investment Value | Risk Score | Source", "interpretation": "Use this as the ranked output schema for every identified company."},
+                    {"metric": "Ownership Checks", "value": "Promoter holding, FII/DII, insider ownership, beneficial owner, related-party transaction, cross-holding", "interpretation": "Look for control pathways that do not appear as simple promoter ownership."},
+                    {"metric": "Market Link", "value": "NSE/BSE listing, sector, government contract dependency, liquidity, valuation", "interpretation": "Political exposure matters most when it can affect revenue, licenses, contracts, or regulation."},
+                ),
+            },
+            {
+                "title": "Risk Scoring Model",
+                "rows": (
+                    {"metric": "Political Influence Score", "value": "0-100", "interpretation": "Higher when credible links to PEPs, donors, family networks, or political offices are present."},
+                    {"metric": "Beneficial Ownership Risk", "value": "0-100", "interpretation": "Higher when ownership path uses layered entities, trusts, proxies, or opaque foreign vehicles."},
+                    {"metric": "Government Dependency Score", "value": "0-100", "interpretation": "Higher for defence, infrastructure, mining, energy, telecom, banking licenses, and public procurement."},
+                    {"metric": "Transparency Score", "value": "0-100", "interpretation": "Higher transparency reduces governance risk; low transparency raises due-diligence threshold."},
+                    {"metric": "Overall Political Connection Score", "value": "Weighted aggregate", "interpretation": "Do not use as a buy signal alone; combine with valuation, earnings quality, and legal/regulatory status."},
+                ),
+            },
+            {
+                "title": "Investor Action Framework",
+                "rows": (
+                    {"metric": "Buy / Accumulate", "value": "Only when business quality is strong and political exposure is disclosed, legal, and not revenue-critical", "interpretation": "Prefer diversified position sizing and a governance discount in valuation."},
+                    {"metric": "Hold / Watchlist", "value": "Use when evidence is incomplete or political links are indirect", "interpretation": "Track exchange filings, court cases, procurement awards, and ownership changes."},
+                    {"metric": "Avoid / Reduce", "value": "Use when opaque beneficial ownership, corruption allegation, tender dependency, or regulatory investigation is material", "interpretation": "Governance risk can create sudden drawdowns independent of fundamentals."},
+                ),
+            },
+        ),
+        "reasons": (
+            "Political influence analysis is a due-diligence and governance-risk workflow, not a rumor-based stock tip.",
+            "Every finding should be backed by source URLs from filings, exchange disclosures, public records, or reputable investigations.",
+            "The highest investor risk appears when political exposure overlaps with government contracts, licenses, public procurement, or opaque beneficial ownership.",
+            "Attached prompt/context is used as analysis instructions; source-backed verification is still required before any investment action.",
+        ),
+        "research_sources": (
+            "Election Commission filings",
+            "SEBI disclosures",
+            "NSE/BSE filings",
+            "MCA company records",
+            "Government procurement portals",
+            "OpenCorporates",
+            "Trusted investigative and financial news feeds",
+        ),
+    }
+
+
 def _category_profile(query: MarketQuery) -> dict[str, Any]:
     treaty_pair = _treaty_country_pair(query.raw_text)
     if treaty_pair:
@@ -1975,6 +2058,7 @@ def _category_profile(query: MarketQuery) -> dict[str, Any]:
         "market_summary": _market_summary_profile(query),
         "sector_outlook": _sector_outlook_profile(query),
         "precious_metals_technical": _precious_metals_technical_profile(query),
+        "political_influence": _political_influence_profile(query),
         "macro_geopolitics": {
             "title": "Macro And Geopolitical Market Impact",
             "direction": "Event Driven",

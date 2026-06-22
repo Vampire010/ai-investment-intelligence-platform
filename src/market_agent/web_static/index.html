@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Investment Intelligence Platform</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260622_1945">
+  <link rel="stylesheet" href="/static/styles.css?v=20260622_2015">
 </head>
 <body>
   <main class="shell">
@@ -30,6 +30,11 @@
       <section class="prompt-panel">
         <label for="prompt">Investment prompt</label>
         <textarea id="prompt" spellcheck="false">I want 3X profit in 5 years. Suggest investment strategy.</textarea>
+        <div class="attachment-row">
+          <label class="attach-button" for="attachmentInput">Attach Files</label>
+          <input id="attachmentInput" type="file" multiple accept=".txt,.md,.csv,.json,.log">
+          <div id="attachmentList" class="attachment-list" aria-live="polite">No attachments</div>
+        </div>
         <div class="actions">
           <button id="analyzeBtn" type="button">Analyze</button>
           <button id="cancelBtn" type="button" disabled>Cancel</button>
@@ -46,6 +51,9 @@
             <button type="button" data-prompt="List the top 5 macro or policy events affecting Indian markets currently (RBI decisions, CPI, GDP, FII flows, election/geo events) and the likely immediate impact on equities, bonds, and INR.">India Macro Headlines (Real-time)</button>
             <button type="button" data-prompt="Recommend the top 5 sectors in India for the next 6–12 months with rationale, top 3 stock picks per sector, and key catalysts to watch.">Top Sectors — 6–12 Month Outlook (India)</button>
             <button type="button" data-prompt="Provide a SIP or allocation strategy for an Indian investor targeting 3X in 5 years: suggested asset allocation, sample mutual funds/stocks, expected returns assumptions, and a risk checklist specific to India.">SIP Strategy — 3X in 5 Years (India)</button>        
+            <button type="button" data-prompt="Analyze political influence and beneficial ownership risk for Indian listed companies. Rank companies by political exposure, government contract dependency, transparency, and investor risk with source evidence.">Political Exposure Risk</button>
+            <button type="button" data-prompt="Using the attached political influence prompt, identify listed companies with PEP links, family ownership, beneficial ownership pathways, government contract exposure, and investment risk scores.">Analyze Attached Political Prompt</button>
+            <button type="button" data-prompt="Screen NSE/BSE companies for political connection risk: include political person, party affiliation, relationship type, ownership percentage, risk score, transparency score, and source URLs.">PEP Ownership Screen</button>
 
         </div>
       </section>
@@ -89,13 +97,13 @@
       <div class="report-head">
         <h2>Live Analysis Result</h2>
         <div class="report-actions">
-          <span class="app-version">v20260622_1945</span>
+          <span class="app-version">v20260622_2015</span>
           <span id="reportState">No result yet</span>
         </div>
       </div>
       <section id="resultPanel" class="result-panel" aria-live="polite"></section>
     </aside>
   </main>
-  <script src="/static/app.js?v=20260622_1945"></script>
+  <script src="/static/app.js?v=20260622_2015"></script>
 </body>
 </html>

@@ -5,6 +5,8 @@ const clearBtn = document.querySelector("#clearBtn");
 const clearRecentBtn = document.querySelector("#clearRecentBtn");
 const recentToggleBtn = document.querySelector("#recentToggleBtn");
 const recentMenu = document.querySelector("#recentMenu");
+const attachmentInput = document.querySelector("#attachmentInput");
+const attachmentList = document.querySelector("#attachmentList");
 const statusEl = document.querySelector("#status");
 const resultPanel = document.querySelector("#resultPanel");
 const reportState = document.querySelector("#reportState");
@@ -38,6 +40,7 @@ cancelBtn.addEventListener("click", cancelAnalysis);
 clearBtn.addEventListener("click", clearPrompt);
 clearRecentBtn.addEventListener("click", clearRecentPrompts);
 recentToggleBtn.addEventListener("click", toggleRecentMenu);
+attachmentInput.addEventListener("change", renderAttachmentList);
 promptInput.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
     runAnalysis();
@@ -61,8 +64,9 @@ async function runAnalysis() {
   showPanelMessage("Analyzing realtime feeds and building the result...");
   reportState.textContent = "Working";
   try {
+    const attachments = await readAttachments(controller.signal);
     saveRecentPrompt(prompt);
-    const payload = await requestAnalysis(prompt, controller.signal);
+    const payload = await requestAnalysis(prompt, attachments, controller.signal);
     renderResult(payload);
     setStatus("Complete");
     reportState.textContent = "Rendered";
@@ -99,8 +103,8 @@ async function runAnalysis() {
   }
 }
 
-async function requestAnalysis(prompt, signal) {
-  const requestBody = JSON.stringify({ prompt, no_prompt_training: true });
+async function requestAnalysis(prompt, attachments, signal) {
+  const requestBody = JSON.stringify({ prompt, no_prompt_training: true, attachments });
   try {
     return await postAnalysis(requestBody, signal);
   } catch (error) {
@@ -194,9 +198,62 @@ function clearPrompt() {
     activeRequest.abort();
   }
   promptInput.value = "";
+  attachmentInput.value = "";
+  renderAttachmentList();
   promptInput.focus();
   resetResults();
   setStatus("Ready");
+}
+
+function renderAttachmentList() {
+  const files = Array.from(attachmentInput.files || []);
+  if (!files.length) {
+    attachmentList.textContent = "No attachments";
+    return;
+  }
+  attachmentList.innerHTML = files
+    .slice(0, 3)
+    .map((file) => `<strong>${escapeHtml(file.name)}</strong> (${formatBytes(file.size)})`)
+    .join(", ");
+}
+
+async function readAttachments(signal) {
+  const files = Array.from(attachmentInput.files || []).slice(0, 3);
+  const attachments = [];
+  for (const file of files) {
+    if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+    if (!isSupportedAttachment(file)) {
+      attachments.push({
+        name: file.name,
+        text: `Unsupported attachment type. Please use txt, md, csv, json, or log files. File: ${file.name}`,
+      });
+      continue;
+    }
+    const text = await readFileText(file);
+    attachments.push({ name: file.name, text: text.slice(0, 12000) });
+  }
+  return attachments;
+}
+
+function isSupportedAttachment(file) {
+  const name = file.name.toLowerCase();
+  return [".txt", ".md", ".csv", ".json", ".log"].some((ext) => name.endsWith(ext));
+}
+
+function readFileText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Unable to read attachment"));
+    reader.readAsText(file.slice(0, 12000));
+  });
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function toggleRecentMenu() {
@@ -258,6 +315,7 @@ function renderResult(payload) {
   const question = payload.query?.text || promptInput.value.trim();
   resultPanel.innerHTML = [
     heroHtml(question, payload.query),
+    attachmentsHtml(payload.attachments || []),
     resultBodyHtml(analysis, payload.text),
   ].join("");
 }
@@ -299,6 +357,19 @@ function heroHtml(question, query) {
         <span>Realtime data workflow</span>
       </div>
     </section>`;
+}
+
+function attachmentsHtml(items) {
+  if (!items.length) return "";
+  const rows = items.map((item) => [
+    item.name || "",
+    item.characters_used || 0,
+    item.truncated ? "Yes" : "No",
+  ]);
+  return sectionHtml(
+    "Attachments Used",
+    tableFromRows(["File", "Characters Used", "Truncated"], rows)
+  );
 }
 
 function topStocksHtml(analysis) {

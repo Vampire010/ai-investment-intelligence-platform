@@ -215,6 +215,44 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
 }
 
+.attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.attach-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 12px;
+  color: #17424a;
+  background: #eefafa;
+  border: 1px solid #bce3df;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#attachmentInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.attachment-list {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.attachment-list strong {
+  color: var(--ink);
+}
+
 .actions {
   display: flex;
   align-items: center;

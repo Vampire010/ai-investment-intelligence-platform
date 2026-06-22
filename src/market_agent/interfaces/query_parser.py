@@ -119,6 +119,8 @@ def _instrument_type(lower: str) -> str:
         return "news"
     if library_category == "portfolio":
         return "portfolio"
+    if _looks_like_political_influence_question(lower):
+        return "news"
     if _looks_like_policy_or_treaty_question(lower):
         return "news"
     if _looks_like_return_multiple_goal(lower):
@@ -194,6 +196,8 @@ def _perspective(lower: str) -> str:
         return "macro_geopolitics"
     if library_category == "portfolio":
         return "portfolio_strategy"
+    if _looks_like_political_influence_question(lower):
+        return "political_influence"
     if _looks_like_policy_or_treaty_question(lower):
         return "news_impact"
     if _looks_like_return_multiple_goal(lower):
@@ -377,6 +381,29 @@ def _looks_like_macro_event_brief(lower: str) -> bool:
         or ("rbi" in lower and "cpi" in lower and "gdp" in lower)
         or ("equities" in lower and "bonds" in lower and "inr" in lower)
     )
+
+
+def _looks_like_political_influence_question(lower: str) -> bool:
+    political_terms = (
+        "political influence",
+        "politically exposed",
+        "beneficial ownership",
+        "political connection",
+        "political exposure",
+        "political party donor",
+        "election affidavit",
+        "government contract exposure",
+        "corporate ownership",
+        "ownership chain",
+        "pep",
+        "peps",
+        "related-party",
+        "shell company",
+        "political network",
+        "politician",
+        "politicians",
+    )
+    return any(term in lower for term in political_terms)
 
 
 def _looks_like_policy_or_treaty_question(lower: str) -> bool:

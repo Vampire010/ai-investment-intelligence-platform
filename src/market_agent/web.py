@@ -5,6 +5,7 @@ import json
 import mimetypes
 import os
 import re
+from dataclasses import replace
 from datetime import date, datetime
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -31,7 +32,7 @@ from market_agent.services.agent import MarketAnalysisAgent
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "web_static"
-APP_VERSION = "20260622_1945"
+APP_VERSION = "20260622_2015"
 
 
 def run(host: str = "127.0.0.1", port: int = 8765) -> None:
@@ -51,8 +52,13 @@ def analyze_prompt(
     no_prompt_training: bool = False,
     prompt_dataset: str | None = None,
     prompt_limit: int = 5,
+    attachments: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    query = parse_market_query(prompt)
+    original_prompt = prompt.strip()
+    analysis_prompt, attachment_meta = _prompt_with_attachment_context(original_prompt, attachments)
+    query = parse_market_query(analysis_prompt)
+    if attachment_meta:
+        query = replace(query, raw_text=original_prompt)
     args = argparse.Namespace(
         no_prompt_training=no_prompt_training,
         use_prompt_training=False,
@@ -70,6 +76,7 @@ def analyze_prompt(
             "text": text,
             "error": "",
             "analysis": result,
+            "attachments": attachment_meta,
             "summary": _summary_from_text(text),
         }
 
@@ -84,6 +91,7 @@ def analyze_prompt(
                 "text": text,
                 "error": "",
                 "analysis": result,
+                "attachments": attachment_meta,
                 "summary": _summary_from_text(text),
             }
         except DataSourceError as exc:
@@ -95,6 +103,7 @@ def analyze_prompt(
                 "text": text,
                 "error": "",
                 "analysis": result,
+                "attachments": attachment_meta,
                 "summary": _summary_from_text(text),
             }
 
@@ -135,6 +144,7 @@ def analyze_prompt(
             "text": text,
             "error": "",
             "analysis": result,
+            "attachments": attachment_meta,
             "summary": _summary_from_text(text),
         }
 
@@ -144,8 +154,35 @@ def analyze_prompt(
         "text": text,
         "error": "",
         "analysis": result,
+        "attachments": attachment_meta,
         "summary": _summary_from_text(text),
     }
+
+
+def _prompt_with_attachment_context(prompt: str, attachments: list[dict[str, Any]] | None) -> tuple[str, list[dict[str, Any]]]:
+    clean_prompt = prompt.strip()
+    if not attachments:
+        return clean_prompt, []
+    context_blocks: list[str] = []
+    metadata: list[dict[str, Any]] = []
+    for index, item in enumerate(attachments[:3], start=1):
+        name = str(item.get("name") or f"attachment-{index}").strip()[:120]
+        text = str(item.get("text") or "").strip()
+        if not text:
+            continue
+        bounded_text = text[:12000]
+        metadata.append(
+            {
+                "name": name,
+                "characters_used": len(bounded_text),
+                "truncated": len(text) > len(bounded_text),
+            }
+        )
+        context_blocks.append(f"Attachment {index}: {name}\n{bounded_text}")
+    if not context_blocks:
+        return clean_prompt, []
+    attachment_context = "\n\nAttachment Context For Analysis:\n" + "\n\n---\n\n".join(context_blocks)
+    return f"{clean_prompt}{attachment_context}", metadata
 
 
 def _needs_stock_symbol(query: MarketQuery) -> bool:
@@ -540,6 +577,7 @@ class InvestmentWebHandler(BaseHTTPRequestHandler):
                 prompt,
                 no_prompt_training=bool(payload.get("no_prompt_training", False)),
                 prompt_dataset=payload.get("prompt_dataset") or None,
+                attachments=payload.get("attachments") if isinstance(payload.get("attachments"), list) else None,
             )
             self._send_json(response)
         except json.JSONDecodeError:

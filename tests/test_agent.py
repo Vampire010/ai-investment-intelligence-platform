@@ -278,6 +278,14 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertIsNone(query.stock_symbol)
         self.assertEqual(query.top_n, 5)
 
+    def test_market_query_parser_handles_political_influence_prompt(self) -> None:
+        query = parse_market_query(
+            "Analyze political influence, beneficial ownership, PEP links, and government contract exposure for Indian listed companies."
+        )
+
+        self.assertEqual(query.instrument_type, "news")
+        self.assertEqual(query.perspective, "political_influence")
+
     def test_market_query_parser_handles_single_stock_intraday_prompt(self) -> None:
         query = parse_market_query("Give intraday trading plan for TCS today")
 
@@ -702,6 +710,27 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertIn("required CAGR", text)
         self.assertNotIn("Stock Symbol Required", text)
 
+    def test_web_attachment_context_routes_to_political_influence_profile(self) -> None:
+        result = analyze_prompt(
+            "Analyze the attached investment intelligence prompt.",
+            no_prompt_training=True,
+            attachments=[
+                {
+                    "name": "Political_Influence_Investment_Intelligence_Prompt.txt",
+                    "text": "Act as a Political Influence, Beneficial Ownership, PEP, government contract exposure and investment intelligence AI.",
+                }
+            ],
+        )
+        text = result["text"]
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["query"]["perspective"], "political_influence")
+        self.assertEqual(result["query"]["text"], "Analyze the attached investment intelligence prompt.")
+        self.assertEqual(result["attachments"][0]["name"], "Political_Influence_Investment_Intelligence_Prompt.txt")
+        self.assertIn("Political Influence Investment Intelligence", text)
+        self.assertIn("Risk Scoring Model", text)
+        self.assertNotIn("Stock Symbol Required", text)
+
     def test_web_direct_today_gold_prompt_returns_actual_value(self) -> None:
         with patch.object(
             web_app.RealtimeIndiaMarketDataSource,
@@ -800,10 +829,12 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertIn("/static/app.js?v=", html)
         self.assertIn("/static/styles.css?v=", html)
-        self.assertIn("v20260622_1945", html)
+        self.assertIn("v20260622_2015", html)
         self.assertIn("Live Analysis Result", html)
         self.assertIn("Recent Prompts", html)
         self.assertIn("recentToggleBtn", html)
+        self.assertIn("attachmentInput", html)
+        self.assertIn("Political Exposure Risk", html)
         self.assertNotIn("Stored HTML Report", html)
         self.assertNotIn("Try Again", app_js)
         self.assertNotIn("could not be completed", app_js)
