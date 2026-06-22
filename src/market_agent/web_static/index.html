@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Investment Intelligence Platform</title>
-  <link rel="stylesheet" href="/static/styles.css?v=20260621_1915">
+  <link rel="stylesheet" href="/static/styles.css?v=20260621_1930">
 </head>
 <body>
   <main class="shell">
@@ -36,10 +36,17 @@
           <button id="clearBtn" type="button">Clear</button>          
         </div>
         <div class="examples" aria-label="Example prompts">
-          <button type="button" data-prompt="what will be gold price on 22 June 2026">Gold forecast</button>
-          <button type="button" data-prompt="suggest me top 20 stocks to buy on 22 June 2026">Top stocks</button>
-          <button type="button" data-prompt="[Macro & Geopolitics] Assess impact of Middle East conflict on Indian markets.">Macro risk</button>
-          <button type="button" data-prompt="what are the treaty signed between India and US">Treaty impact</button>
+            <button type="button" data-prompt="Provide the current spot price of gold in INR (MCX / XAUINR), 24-hour change %, primary data source, and a 3-point summary focused on the India market.">Gold: Current Price (INR)</button>
+            <button type="button" data-prompt="Analyze the last 7 days of gold in INR (MCX): trend, key support/resistance levels, volatility, and a 7-day outlook with expected range for Indian investors.">Gold: 7-Day Trend (India)</button>
+            <button type="button" data-prompt="Provide the current spot price of silver in INR (MCX / XAGINR), 24-hour change %, primary data source, and a concise summary for India market participants.">Silver: Current Price (INR)</button>
+            <button type="button" data-prompt="Analyze the last 7 days of silver in INR (MCX): trend, key technical levels, volatility, and a 7-day outlook suited for Indian traders.">Silver: 7-Day Trend (India)</button>
+            <button type="button" data-prompt="Suggest top 20 Indian stocks to buy right now: include ticker (NSE/BSE), sector, short rationale, 3 key risks, and a confidence score for each recommendation.">Top 20 Indian Stocks (Real-time)</button>
+            <button type="button" data-prompt="List top intraday movers on the NSE right now: ticker, % change, volume vs average, and a one-line reason for the move.">Top NSE Intraday Movers (Real-time)</button>
+            <button type="button" data-prompt="Give a live market summary for Indian markets: Sensex, Nifty performance, top gaining/losing sectors, FIIs/DII net flows (if available), and 3 notable movers with reasons.">India Market Summary (Real-time)</button>
+            <button type="button" data-prompt="List the top 5 macro or policy events affecting Indian markets currently (RBI decisions, CPI, GDP, FII flows, election/geo events) and the likely immediate impact on equities, bonds, and INR.">India Macro Headlines (Real-time)</button>
+            <button type="button" data-prompt="Recommend the top 5 sectors in India for the next 6–12 months with rationale, top 3 stock picks per sector, and key catalysts to watch.">Top Sectors — 6–12 Month Outlook (India)</button>
+            <button type="button" data-prompt="Provide a SIP or allocation strategy for an Indian investor targeting 3X in 5 years: suggested asset allocation, sample mutual funds/stocks, expected returns assumptions, and a risk checklist specific to India.">SIP Strategy — 3X in 5 Years (India)</button>        
+
         </div>
       </section>
 
@@ -82,13 +89,13 @@
       <div class="report-head">
         <h2>Live Analysis Result</h2>
         <div class="report-actions">
-          <span class="app-version">v20260621_1915</span>
+          <span class="app-version">v20260621_1930</span>
           <span id="reportState">No result yet</span>
         </div>
       </div>
       <section id="resultPanel" class="result-panel" aria-live="polite"></section>
     </aside>
   </main>
-  <script src="/static/app.js?v=20260621_1915"></script>
+  <script src="/static/app.js?v=20260621_1930"></script>
 </body>
 </html>

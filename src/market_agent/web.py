@@ -31,7 +31,7 @@ from market_agent.services.agent import MarketAnalysisAgent
 
 
 STATIC_DIR = Path(__file__).resolve().parent / "web_static"
-APP_VERSION = "20260621_1915"
+APP_VERSION = "20260621_1930"
 
 
 def run(host: str = "127.0.0.1", port: int = 8765) -> None:

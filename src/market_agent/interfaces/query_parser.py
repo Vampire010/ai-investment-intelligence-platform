@@ -123,6 +123,8 @@ def _instrument_type(lower: str) -> str:
         return "news"
     if _looks_like_return_multiple_goal(lower):
         return "wealth"
+    if _looks_like_market_summary(lower) or _looks_like_sector_outlook(lower) or _looks_like_macro_event_brief(lower):
+        return "news"
     if _looks_like_macro_geopolitics(lower):
         return "news"
     if (
@@ -196,6 +198,12 @@ def _perspective(lower: str) -> str:
         return "news_impact"
     if _looks_like_return_multiple_goal(lower):
         return "multibagger_goal"
+    if _looks_like_market_summary(lower):
+        return "market_summary"
+    if _looks_like_sector_outlook(lower):
+        return "sector_outlook"
+    if _looks_like_macro_event_brief(lower):
+        return "macro_events"
     if _looks_like_macro_geopolitics(lower):
         return "macro_geopolitics"
     if (
@@ -225,6 +233,13 @@ def _perspective(lower: str) -> str:
         return "technology_investment"
     if "it sector" in lower or "it stocks" in lower:
         return "sector_analysis"
+    if "silver" in lower and (
+        "last 7" in lower
+        or "technical" in lower
+        or "support/resistance" in lower
+        or "support" in lower and "resistance" in lower
+    ):
+        return "precious_metals_technical"
     if "silver" in lower:
         return "gold_silver_compare"
     if "crypto" in lower or "bitcoin" in lower or "ethereum" in lower:
@@ -261,6 +276,13 @@ def _perspective(lower: str) -> str:
         return "multi_news_intelligence"
     if "rank all assets" in lower or "investment intelligence platform" in lower:
         return "master_platform"
+    if "gold" in lower and (
+        "last 7" in lower
+        or "technical" in lower
+        or "support/resistance" in lower
+        or "support" in lower and "resistance" in lower
+    ):
+        return "precious_metals_technical"
     if "gold market analyst" in lower or ("gold" in lower and ("next 7" in lower or "next 30" in lower or "next 90" in lower)):
         return "gold_forecast"
     if (
@@ -326,6 +348,32 @@ def _looks_like_macro_geopolitics(lower: str) -> bool:
         "indian markets",
     )
     return any(term in lower for term in macro_terms)
+
+
+def _looks_like_market_summary(lower: str) -> bool:
+    return (
+        "market summary" in lower
+        or "sensex" in lower and "nifty" in lower and ("movers" in lower or "sector" in lower)
+        or "fii" in lower and "dii" in lower and "market" in lower
+    )
+
+
+def _looks_like_sector_outlook(lower: str) -> bool:
+    return (
+        "top 5 sectors" in lower
+        or "top sectors" in lower
+        or "sector outlook" in lower
+        or ("sectors in india" in lower and ("6" in lower or "12" in lower or "months" in lower))
+    )
+
+
+def _looks_like_macro_event_brief(lower: str) -> bool:
+    return (
+        "macro or policy events" in lower
+        or "policy events" in lower
+        or ("rbi" in lower and "cpi" in lower and "gdp" in lower)
+        or ("equities" in lower and "bonds" in lower and "inr" in lower)
+    )
 
 
 def _looks_like_policy_or_treaty_question(lower: str) -> bool:

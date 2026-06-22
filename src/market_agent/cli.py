@@ -73,6 +73,10 @@ CATEGORY_PERSPECTIVES = {
     "ipo_analysis",
     "technology_investment",
     "macro_geopolitics",
+    "macro_events",
+    "market_summary",
+    "sector_outlook",
+    "precious_metals_technical",
     "multibagger_goal",
     "equity_research",
     "gold_intelligence",
@@ -106,6 +110,10 @@ OFFICIAL_SOURCES_BY_PERSPECTIVE = {
     "ipo_analysis": ("SEBI Updates", "NSE Circulars", "BSE Notices", "PIB Government Releases"),
     "technology_investment": ("MeitY Updates", "DPIIT Startup India", "SEBI Updates", "PIB Government Releases", "India Budget"),
     "macro_geopolitics": ("PIB Government Releases", "RBI Press Releases", "SEBI Updates", "India Budget"),
+    "macro_events": ("RBI Press Releases", "RBI Notifications", "PIB Government Releases", "India Budget", "SEBI Updates"),
+    "market_summary": ("NSE Circulars", "BSE Notices", "RBI Press Releases", "SEBI Updates"),
+    "sector_outlook": ("NSE Circulars", "BSE Notices", "SEBI Updates", "MeitY Updates", "DPIIT Startup India", "India Budget"),
+    "precious_metals_technical": ("RBI Press Releases", "RBI Notifications", "PIB Government Releases", "India Budget"),
     "multibagger_goal": ("SEBI Updates", "AMFI Investor Information", "NSE Circulars", "BSE Notices", "India Budget"),
     "equity_research": ("NSE Circulars", "BSE Notices", "SEBI Updates", "PIB Government Releases"),
     "gold_intelligence": ("RBI Press Releases", "RBI Notifications", "PIB Government Releases", "India Budget"),
@@ -781,6 +789,10 @@ def _category_news_entities(query: MarketQuery) -> tuple[str, ...]:
         "silver_intelligence": ("silver", "gold"),
         "gold_silver_compare": ("silver", "gold"),
         "macro_geopolitics": ("gold", "stock", "investment"),
+        "macro_events": ("stock", "investment", "gold"),
+        "market_summary": ("stock", "nifty", "sensex"),
+        "sector_outlook": ("stock", "technology", "banking", "pharma", "auto"),
+        "precious_metals_technical": ("gold", "silver"),
         "portfolio_strategy": ("mutual fund", "stock", "gold", "investment"),
         "portfolio_advisor": ("mutual fund", "stock", "gold", "investment"),
         "equity_research": (query.stock_symbol or "stock",),
@@ -994,6 +1006,10 @@ def _trusted_master_links_for_perspective(perspective: str) -> list[dict[str, st
         "ipo_analysis": "stock_impact_score",
         "technology_investment": "ai_weighting_score",
         "macro_geopolitics": "crisis_impact_score",
+        "macro_events": "crisis_impact_score",
+        "market_summary": "stock_impact_score",
+        "sector_outlook": "stock_impact_score",
+        "precious_metals_technical": "gold_impact_score",
         "multibagger_goal": "ai_weighting_score",
         "equity_research": "stock_impact_score",
         "gold_intelligence": "gold_impact_score",
@@ -1328,8 +1344,8 @@ def _multibagger_goal_profile(query: MarketQuery) -> dict[str, Any]:
     horizon_years = _requested_horizon_years(query.raw_text)
     required_cagr = (multiple ** (1 / horizon_years) - 1) * 100 if horizon_years else 0.0
     risk_score = min(95, 50 + int(required_cagr * 0.8))
-    buy_probability = max(22, min(58, int(68 - required_cagr * 0.7)))
-    hold_probability = max(26, min(55, 100 - buy_probability - 18))
+    buy_probability = max(18, min(48, int(62 - required_cagr * 0.8)))
+    hold_probability = max(34, min(58, 100 - buy_probability - 22))
     sell_probability = 100 - buy_probability - hold_probability
     return {
         "type": "wealth_multiplier",
@@ -1345,10 +1361,31 @@ def _multibagger_goal_profile(query: MarketQuery) -> dict[str, Any]:
         ),
         "risk_score": risk_score,
         "reasons": (
-            "2X/3X/4X goals require reverse-CAGR planning, not a guaranteed price prediction.",
-            "Use a core-satellite structure: broad index or flexi-cap core, plus carefully sized high-growth stock/theme exposure.",
+            f"{multiple:g}X in {horizon_years:g} years needs about {required_cagr:.1f}% CAGR before tax, expense ratio, slippage, and bad-year drawdowns.",
+            "This is not a guaranteed price prediction; it is a high-growth allocation framework with explicit risk controls.",
+            "An ordinary diversified SIP is unlikely to reliably deliver this target alone; the plan needs high-growth equity exposure plus disciplined risk controls.",
+            "Use a core-satellite structure: index/flexi-cap core, mid/small-cap and quality direct-equity satellites, and a small tactical reserve.",
             "For higher multiples, focus on earnings growth, reinvestment runway, balance-sheet quality, valuation discipline, and catalyst timing.",
-            "Control downside with position sizing, staged buying, review triggers, and exit rules when thesis or earnings trend breaks.",
+            "Control downside with position sizing, staged buying, review triggers, and exit rules when thesis, earnings trend, or leverage quality breaks.",
+        ),
+        "analysis_sections": (
+            {
+                "title": "Financial Expert Allocation",
+                "rows": (
+                    {"metric": "Core Equity SIP", "value": "35% index/flexi-cap/large-mid funds", "interpretation": "Compounding base; less fragile than concentrated stocks."},
+                    {"metric": "Growth Satellite", "value": "30% mid/small-cap funds or quality growth basket", "interpretation": "Needed for 3X ambition, but should be reviewed quarterly."},
+                    {"metric": "Direct Equity Themes", "value": "20% sector leaders in banking, capex, pharma, IT recovery, autos", "interpretation": "Use only with stock-level research and stop/review rules."},
+                    {"metric": "Gold/Debt/Cash", "value": "15% hedge and opportunity reserve", "interpretation": "Reduces forced selling during corrections."},
+                ),
+            },
+            {
+                "title": "Risk Checklist",
+                "rows": (
+                    {"metric": "Feasibility", "value": "High risk", "interpretation": "3X in 5 years is aggressive; plan for 25-35% interim drawdowns."},
+                    {"metric": "Review Triggers", "value": "Earnings downgrade, valuation excess, leverage increase, policy shock", "interpretation": "Exit or reduce exposure if thesis breaks."},
+                    {"metric": "Tax/Cost", "value": "LTCG/STCG, expense ratio, brokerage, slippage", "interpretation": "Net return target is higher than headline CAGR."},
+                ),
+            },
         ),
         "research_sources": (
             "NSE/BSE disclosures",
@@ -1515,6 +1552,172 @@ def _portfolio_strategy_profile(query: MarketQuery) -> dict[str, Any]:
             "Use staged deployment and rebalance when asset weights drift materially.",
         ),
         "research_sources": ("SEBI", "AMFI", "RBI", "Trusted financial news feeds", "Portfolio risk model"),
+    }
+
+
+def _sector_outlook_profile(query: MarketQuery) -> dict[str, Any]:
+    return {
+        "type": "sector_outlook",
+        "title": "India Sector Outlook - 6 to 12 Months",
+        "direction": "Selective Uptrend",
+        "signal": "Accumulate Selectively",
+        "buy_probability": 61,
+        "hold_probability": 31,
+        "sell_probability": 8,
+        "confidence_score": 71,
+        "predicted_range": "Sector rotation framework; use stock-specific valuation and earnings confirmation before execution",
+        "risk_score": 57,
+        "analysis_sections": (
+            {
+                "title": "Top 5 Sector Ranking",
+                "rows": (
+                    {"metric": "1. Banking & Financials", "value": "HDFCBANK, ICICIBANK, SBIN", "interpretation": "Credit growth, asset-quality normalization, rate-cut optionality; watch NIM compression and credit costs."},
+                    {"metric": "2. Capital Goods / Infrastructure", "value": "LT, ABB, SIEMENS", "interpretation": "Order-book visibility, capex cycle, defence/railways/power spend; watch execution and valuation."},
+                    {"metric": "3. Pharma & Healthcare", "value": "SUNPHARMA, CIPLA, DRREDDY", "interpretation": "Defensive earnings, US generics, domestic chronic therapies; watch USFDA and pricing risk."},
+                    {"metric": "4. IT Services", "value": "TCS, INFY, HCLTECH", "interpretation": "Rate-cut cycle and AI/cloud spending recovery; watch weak discretionary tech budgets."},
+                    {"metric": "5. Autos & EV Supply Chain", "value": "MARUTI, TATAMOTORS, M&M", "interpretation": "Premiumization, EV adoption, rural recovery; watch commodity and demand cyclicality."},
+                ),
+            },
+            {
+                "title": "Key Catalysts To Watch",
+                "rows": (
+                    {"metric": "Rates", "value": "RBI liquidity, repo guidance, bond yields", "interpretation": "Supports banks, NBFCs, real estate, and rate-sensitive consumption."},
+                    {"metric": "Earnings", "value": "Margin expansion, order inflow, revenue growth", "interpretation": "Confirms whether sector momentum is fundamental or only narrative-driven."},
+                    {"metric": "Policy", "value": "Budget capex, PLI, defence, power, infrastructure awards", "interpretation": "Can create multi-quarter earnings visibility."},
+                    {"metric": "Flows", "value": "FII/DII allocation and sector rotation", "interpretation": "High-quality sectors outperform when flows and earnings align."},
+                ),
+            },
+        ),
+        "reasons": (
+            "A 6-12 month sector call should rank sectors by earnings visibility, policy support, valuation comfort, and liquidity flows.",
+            "Do not buy an entire sector blindly; select leaders with balance-sheet strength and earnings upgrades.",
+            "Use staggered allocation because high-quality sectors can still correct if valuations are stretched.",
+        ),
+        "research_sources": ("NSE/BSE sector data", "SEBI filings", "RBI policy updates", "Budget/PIB policy releases", "Trusted financial news feeds"),
+    }
+
+
+def _market_summary_profile(query: MarketQuery) -> dict[str, Any]:
+    return {
+        "type": "market_summary",
+        "title": "India Live Market Summary",
+        "direction": "Mixed / Breadth Dependent",
+        "signal": "Hold",
+        "buy_probability": 43,
+        "hold_probability": 45,
+        "sell_probability": 12,
+        "confidence_score": 64,
+        "predicted_range": "Market breadth report; verify live Sensex/Nifty levels and sector heatmap before intraday execution",
+        "risk_score": 54,
+        "analysis_sections": (
+            {
+                "title": "Market Dashboard",
+                "rows": (
+                    {"metric": "Nifty / Sensex", "value": "Check live index trend, gap direction, and previous-day close", "interpretation": "Positive if index holds above VWAP/previous close with broad participation."},
+                    {"metric": "Market Breadth", "value": "Advance/decline ratio, midcap/smallcap breadth", "interpretation": "Healthy breadth confirms risk-on; narrow breadth warns against chasing index strength."},
+                    {"metric": "Sector Heatmap", "value": "Banks, IT, pharma, autos, metals, energy, FMCG", "interpretation": "Sector leadership matters more than index headline for trade selection."},
+                    {"metric": "FII/DII Flows", "value": "Use latest exchange/provisional data where available", "interpretation": "FII selling with DII support often creates stock-specific rather than broad-market opportunities."},
+                ),
+            },
+            {
+                "title": "Notable Movers Framework",
+                "rows": (
+                    {"metric": "Momentum Movers", "value": "High volume plus price breakout", "interpretation": "Trade only if price sustains above opening range/VWAP."},
+                    {"metric": "News Movers", "value": "Earnings, order wins, policy, management commentary", "interpretation": "Prefer news with revenue/earnings impact, not only headlines."},
+                    {"metric": "Avoid List", "value": "High leverage, weak results, regulatory stress, abnormal volume reversal", "interpretation": "Avoid low-quality spikes without institutional confirmation."},
+                ),
+            },
+        ),
+        "reasons": (
+            "A live market summary should separate index trend, breadth, sector rotation, flows, and stock-specific catalysts.",
+            "Intraday conviction improves only when index direction, sector leadership, and volume all agree.",
+            "Without licensed exchange ticks, this app gives a research dashboard and evidence framework, not an executable exchange quote.",
+        ),
+        "research_sources": ("NSE/BSE market data", "Exchange circulars", "FII/DII flow reports", "Trusted market news feeds"),
+    }
+
+
+def _macro_events_profile(query: MarketQuery) -> dict[str, Any]:
+    return {
+        "type": "macro_events",
+        "title": "Top Macro And Policy Events Impacting Indian Markets",
+        "direction": "Event Driven",
+        "signal": "Hold",
+        "buy_probability": 38,
+        "hold_probability": 48,
+        "sell_probability": 14,
+        "confidence_score": 68,
+        "predicted_range": "Event-impact matrix; map each event to equities, bonds, INR, gold, and sector rotation",
+        "risk_score": 64,
+        "analysis_sections": (
+            {
+                "title": "Top 5 Event Impact Matrix",
+                "rows": (
+                    {"metric": "1. RBI Policy / Liquidity", "value": "Repo guidance, CRR/OMO/liquidity stance", "interpretation": "Dovish liquidity supports banks, NBFCs, bonds; hawkish stance pressures duration and cyclicals."},
+                    {"metric": "2. CPI / Inflation", "value": "Food inflation, core CPI, fuel pass-through", "interpretation": "High CPI supports gold/defensives, pressures rate-sensitive equities and bonds."},
+                    {"metric": "3. GDP / Earnings Cycle", "value": "Growth momentum, capex, consumption, PMI", "interpretation": "Strong growth supports cyclicals; slowdown favors defensives and quality large caps."},
+                    {"metric": "4. FII/DII Flows", "value": "Foreign selling/buying versus domestic support", "interpretation": "FII selling pressures INR/equities; DII buying can cushion large-cap drawdowns."},
+                    {"metric": "5. Election / Geopolitical Risk", "value": "Policy continuity, oil shock, war risk, tariffs", "interpretation": "Raises volatility, supports gold/energy hedges, can weaken INR if oil rises."},
+                ),
+            },
+            {
+                "title": "Asset Impact",
+                "rows": (
+                    {"metric": "Equities", "value": "Positive if liquidity, earnings, and flows align", "interpretation": "Prefer quality sectors during event uncertainty."},
+                    {"metric": "Bonds", "value": "Benefit from lower inflation and dovish RBI", "interpretation": "Duration risk rises if CPI surprises higher."},
+                    {"metric": "INR", "value": "Sensitive to crude, FII flows, USD strength", "interpretation": "Weak INR supports IT/gold, hurts importers."},
+                ),
+            },
+        ),
+        "reasons": (
+            "Macro event analysis must show transmission into equities, bonds, INR, commodities, and sector rotation.",
+            "Policy surprises matter more than expected events already priced by the market.",
+            "Risk management should be tighter around CPI, RBI, election, crude, and geopolitical event windows.",
+        ),
+        "research_sources": ("RBI", "MOSPI/CPI releases", "GDP releases", "Exchange FII/DII data", "PIB and trusted macro news feeds"),
+    }
+
+
+def _precious_metals_technical_profile(query: MarketQuery) -> dict[str, Any]:
+    metal = "Silver" if "silver" in query.raw_text.lower() else "Gold"
+    unit = "INR per kg" if metal == "Silver" else "INR per 10g"
+    risk = 71 if metal == "Silver" else 58
+    return {
+        "type": "precious_metals_technical",
+        "title": f"{metal} 7-Day Technical Outlook",
+        "direction": "Range Bound With Breakout Bias" if metal == "Gold" else "High Beta Range",
+        "signal": "Hold",
+        "buy_probability": 45 if metal == "Gold" else 42,
+        "hold_probability": 45 if metal == "Gold" else 40,
+        "sell_probability": 10 if metal == "Gold" else 18,
+        "confidence_score": 67 if metal == "Gold" else 61,
+        "predicted_range": f"7-day technical range requires live {metal.lower()} quote; use support/resistance bands and volatility buffer in {unit}",
+        "risk_score": risk,
+        "analysis_sections": (
+            {
+                "title": "7-Day Technical Framework",
+                "rows": (
+                    {"metric": "Trend", "value": "Compare current price with 7-day high/low and 20-period moving average", "interpretation": "Above moving average with rising volume is bullish; below support is defensive."},
+                    {"metric": "Support", "value": "Prior swing low minus 0.5x average daily move", "interpretation": "Fresh longs should not be added below support without reversal confirmation."},
+                    {"metric": "Resistance", "value": "Prior swing high plus 0.5x average daily move", "interpretation": "Breakout is valid only if price sustains above resistance with volume/news support."},
+                    {"metric": "Volatility", "value": "Use average daily move and worst daily move", "interpretation": "Position size should shrink when volatility expands."},
+                ),
+            },
+            {
+                "title": "Trader Playbook",
+                "rows": (
+                    {"metric": "Bullish Entry", "value": "Buy on close above resistance or pullback to support with positive news", "interpretation": "Use staggered entries; avoid all-in trades."},
+                    {"metric": "Stop / Review", "value": "Below support or below prior day low after breakout failure", "interpretation": "Protect capital first; metals can reverse sharply."},
+                    {"metric": "Risk Notes", "value": "Track USD/INR, COMEX trend, RBI/US rates, CPI, geopolitical risk", "interpretation": "Macro confirmation improves technical reliability."},
+                ),
+            },
+        ),
+        "reasons": (
+            f"{metal} 7-day trading should combine current INR price, recent trend, volatility, and macro/news confirmation.",
+            "Do not treat a 7-day outlook as certainty; it is a tactical range with invalidation levels.",
+            "Indian traders should account for USD/INR and global futures movement before execution.",
+        ),
+        "research_sources": ("Groww precious-metal rates", "Yahoo/commodity historical fallback", "RBI/USDINR context", "Trusted commodity news feeds"),
     }
 
 
@@ -1766,6 +1969,10 @@ def _category_profile(query: MarketQuery) -> dict[str, Any]:
         "silver_intelligence": _silver_intelligence_profile(query),
         "portfolio_strategy": _portfolio_strategy_profile(query),
         "portfolio_advisor": _portfolio_strategy_profile(query),
+        "macro_events": _macro_events_profile(query),
+        "market_summary": _market_summary_profile(query),
+        "sector_outlook": _sector_outlook_profile(query),
+        "precious_metals_technical": _precious_metals_technical_profile(query),
         "macro_geopolitics": {
             "title": "Macro And Geopolitical Market Impact",
             "direction": "Event Driven",

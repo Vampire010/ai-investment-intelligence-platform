@@ -595,6 +595,67 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertIn("top_buy_stocks", result["analysis"])
         self.assertNotIn("Stock Symbol Required", result["text"])
 
+    def test_expert_broad_prompt_routing_does_not_require_stock_symbol(self) -> None:
+        cases = {
+            "Recommend the top 5 sectors in India for the next 6-12 months with rationale, top 3 stock picks per sector, and key catalysts to watch.": (
+                "sector_outlook",
+                "India Sector Outlook",
+                "Top 5 Sector Ranking",
+            ),
+            "Give a live market summary for Indian markets: Sensex, Nifty performance, top gaining/losing sectors, FIIs/DII net flows, and 3 notable movers with reasons.": (
+                "market_summary",
+                "India Live Market Summary",
+                "Market Dashboard",
+            ),
+            "List the top 5 macro or policy events affecting Indian markets currently (RBI decisions, CPI, GDP, FII flows, election/geo events) and the likely immediate impact on equities, bonds, and INR.": (
+                "macro_events",
+                "Top Macro And Policy Events",
+                "Top 5 Event Impact Matrix",
+            ),
+            "Analyze the last 7 days of silver in INR (MCX): trend, key technical levels, volatility, and a 7-day outlook suited for Indian traders.": (
+                "precious_metals_technical",
+                "Silver 7-Day Technical Outlook",
+                "Trader Playbook",
+            ),
+            "Analyze the last 7 days of gold in INR (MCX): trend, key support/resistance levels, volatility, and a 7-day outlook with expected range for Indian investors.": (
+                "precious_metals_technical",
+                "Gold 7-Day Technical Outlook",
+                "7-Day Technical Framework",
+            ),
+        }
+
+        for prompt, (perspective, title, section) in cases.items():
+            with self.subTest(prompt=prompt):
+                query = parse_market_query(prompt)
+                result = analyze_prompt(prompt, no_prompt_training=True)
+                text = result["text"]
+
+                self.assertEqual(query.instrument_type, "news" if perspective in {"sector_outlook", "market_summary", "macro_events"} else query.instrument_type)
+                self.assertEqual(query.perspective, perspective)
+                self.assertTrue(result["ok"])
+                self.assertEqual(result["query"]["perspective"], perspective)
+                self.assertIn(title, text)
+                self.assertIn(section, text)
+                self.assertNotIn("Stock Symbol Required", text)
+
+    def test_multibagger_goal_contains_expert_allocation_and_risk_checklist(self) -> None:
+        prompt = (
+            "Provide a SIP or allocation strategy for an Indian investor targeting 3X in 5 years: "
+            "suggested asset allocation, sample mutual funds/stocks, expected returns assumptions, "
+            "and a risk checklist specific to India."
+        )
+
+        result = analyze_prompt(prompt, no_prompt_training=True)
+        text = result["text"]
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["query"]["perspective"], "multibagger_goal")
+        self.assertIn("3X Wealth Multiplication Plan", text)
+        self.assertIn("Financial Expert Allocation", text)
+        self.assertIn("Risk Checklist", text)
+        self.assertIn("required CAGR", text)
+        self.assertNotIn("Stock Symbol Required", text)
+
     def test_web_direct_today_gold_prompt_returns_actual_value(self) -> None:
         with patch.object(
             web_app.RealtimeIndiaMarketDataSource,
@@ -677,7 +738,7 @@ class MarketAnalysisAgentTest(unittest.TestCase):
         self.assertEqual(profile["actual_value"], "232736.0 INR per kg")
 
     def test_web_future_gold_prompt_stays_predictive(self) -> None:
-        query = parse_market_query("what will be gold price on 22 June 2026")
+        query = parse_market_query("what will be gold price on 23 June 2026")
 
         self.assertTrue(query.is_prediction)
         self.assertFalse(web_app._is_actual_value_query(query))
@@ -693,7 +754,7 @@ class MarketAnalysisAgentTest(unittest.TestCase):
 
         self.assertIn("/static/app.js?v=", html)
         self.assertIn("/static/styles.css?v=", html)
-        self.assertIn("v20260621_1915", html)
+        self.assertIn("v20260621_1930", html)
         self.assertIn("Live Analysis Result", html)
         self.assertIn("Recent Prompts", html)
         self.assertIn("recentToggleBtn", html)
